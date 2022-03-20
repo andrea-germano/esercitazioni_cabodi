@@ -1,0 +1,95 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#define N_MAX 10
+
+int codifica(FILE *fin, FILE *fout);
+int decodifica(FILE *fin,FILE *fout);
+
+int main() {
+    char s_file_input[N_MAX],s_file_output[N_MAX],path_in[N_MAX+3]="../",path_out[N_MAX+3]="../";
+    int scelta;
+    FILE *f_input,*f_output;
+    printf("Inserisci il nome del file di input:");
+    scanf("%s",s_file_input);
+    strcat(path_in,s_file_input);
+    if ((f_input=fopen(path_in,"r"))==NULL) {
+        printf("Impossibile aprire il file selezionato in lettura\n");
+        return 1;
+    }
+    printf("Inserisci C se vuoi codificare il file appena inserito, D se lo vuoi decodificare:");
+    scanf("%c",&scelta);
+    strcat(path_out,s_file_output);
+    if ((f_output=fopen(path_out,"w"))==NULL) {
+        printf("Impossibile aprire il file  selezionato in scrittura\n");
+        return 1;
+    }
+    scelta= toupper(scelta);
+    switch (scelta) {
+        case 'C':
+            printf("\nNel file %s sono stati codificati correttamente %d caratteri \n",s_file_output,codifica(f_input,f_output));
+            break;
+        case 'D':
+            printf("\nNel file %s sono stati codificati correttamente %d caratteri \n",s_file_output,decodifica(f_input,f_output));
+            break;
+        default:
+            printf("La scelta inserita non ha prodotto risultati");
+            return 1;
+    }
+    fclose(f_input);
+    fclose(f_output);
+    return 0;
+}
+
+int codifica(FILE *fin, FILE *fout) {
+    int k=0,h,cont=0,comodo;
+    char carattere_att,carattere_prec=' ';
+    while(!feof(fin)) {
+        fscanf(fin,"%c",&carattere_att);
+        if (!feof(fin)) {
+            if (carattere_att>='0' && carattere_att<='9') {
+                comodo=carattere_att+k;
+                if (comodo>'9') {
+                    comodo='0'+(comodo-'9'-1);
+                    k=0;
+                }
+                fprintf(fout,"%c",comodo);
+                carattere_prec=(char)comodo;
+                k++;
+            }
+            else if ((carattere_att>='A' && carattere_att<='Z') || (carattere_att>='a' && carattere_att<='z')) {
+                if ((carattere_prec>='A' && carattere_prec<='Z') || (carattere_prec>='a' && carattere_prec<='z')) {
+                    if (carattere_prec>='A' && carattere_prec<='Z') {
+                        h=carattere_prec-'A';
+                    }
+                    else {
+                        h=carattere_prec-'a';
+                    }
+                    comodo=carattere_att+h;
+                    if (carattere_att>='A' && carattere_att<='Z') {
+                        if (comodo>'Z') {
+                            comodo='A'+(comodo-'Z')-1;
+                        }
+                    }
+                    else {
+                        if (comodo>'z') {
+                            comodo='a'+(comodo-'z')-1;
+                        }
+                    }
+                    fprintf(fout,"%c",comodo);
+                    carattere_prec=(char)comodo;
+                }
+                else {
+                    fprintf(fout,"%c",carattere_att);
+                    carattere_prec=carattere_att;
+                }
+            }
+            else {
+                fprintf(fout,"%c",carattere_att);
+                carattere_prec=carattere_att;
+            }
+            cont++;
+        }
+    }
+   return cont;
+}
