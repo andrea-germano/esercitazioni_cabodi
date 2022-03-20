@@ -1,0 +1,111 @@
+#include <stdio.h>
+#include <ctype.h>
+
+int output_codifica(FILE *fout, char carattere, int num);
+int codifica(FILE *finput, FILE *foutput);
+int decodifica(FILE *fin, FILE *fout);
+
+int main(){
+    int scelta;
+    FILE *f_input, *f_output;
+    printf("Inserisci C se vuoi effettuare la codifica del file, D se lo vuoi decodificare:");
+    scanf("%c",&scelta);
+    scelta=toupper(scelta);
+    switch (scelta) {
+        case 'C':
+            if ((f_input = fopen("../sorgente.txt", "r"))==NULL || (f_output = fopen("../compresso.txt", "w"))==NULL) {
+                printf("Non e' stato possibile aprire i file necessari, riprovare\n");
+                return 1;
+            }
+            printf("\nI caratteri che sono stati codificati nel file compresso.txt sono: %d",codifica(f_input,f_output));
+            break;
+        case 'D':
+            if ((f_input = fopen("../compresso.txt", "r"))==NULL || (f_output = fopen("../ricodificato.txt", "w"))==NULL) {
+                printf("Non e' stato possibile aprire i file necessari, riprovare\n");
+                return 1;
+            }
+            printf("\nI caratteri che sono stati decodificati nel file ricodificato.txt sono: %d", decodifica(f_input,f_output));
+            break;
+        default:
+            printf("La scelta effettuata non ha prodotto risultati, riprovare");
+            return 1;
+    }
+    fclose(f_input);
+    fclose(f_output);
+    return 0;
+}
+
+int codifica(FILE *finput, FILE *foutput) {
+    char carattere_att,carattere_prec;
+    int primo=1,cont=1,sostituiti=0;
+    while (!feof(finput)) {
+        fscanf(finput,"%c",&carattere_att);
+        if (!feof(finput)) {  //da controllare se c'è una riga in meno
+            if(primo!=1) {
+                if (carattere_att!=carattere_prec) {
+                    sostituiti+=output_codifica(foutput,carattere_prec,cont);
+                    cont=1;
+                }
+                else {
+                    cont++;
+                }
+            }
+        }
+        carattere_prec=carattere_att;
+        primo=0;
+    }
+    fprintf(foutput,"\n");
+    return sostituiti+1;
+}
+
+int output_codifica(FILE *fout, char carattere, int num) {
+    int cont_char=0;
+    while (num>0) {
+        if (num<=10) {
+            if (num<=2) {
+                for (int i=0; i<num; i++) {
+                    fprintf(fout,"%c",carattere);
+                    cont_char++;
+                }
+            }
+            else {
+                fprintf(fout,"%c$%d",carattere,num-1);
+                cont_char+=3;
+            }
+            num=0;
+        }
+        else {
+            fprintf(fout,"%c$9",carattere);
+            num-=10;
+            cont_char+=3;
+        }
+    }
+    return cont_char;
+}
+
+int decodifica(FILE *finput, FILE *foutput) {
+    int sostituiti=0,numero;
+    char carattere_att,carattere_prec,carattere_prec2;
+    while (!feof(finput)) {
+        fscanf(finput,"%c",&carattere_att);
+        if (!feof(finput)) {
+            if (carattere_prec=='$') {
+                numero=carattere_att-'0';
+                for (int i=0; i<numero;i++) {
+                    fprintf(foutput,"%c",carattere_prec2);
+                    sostituiti++;
+                }
+            }
+            else {
+                if (carattere_att!='$') {
+                    fprintf(foutput,"%c",carattere_att);
+                    sostituiti++;
+                }
+            }
+        }
+        carattere_prec2=carattere_prec;
+        carattere_prec=carattere_att;
+    }
+    return sostituiti;
+}
+
