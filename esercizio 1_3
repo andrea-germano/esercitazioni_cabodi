@@ -1,0 +1,55 @@
+#include <stdio.h>
+#include <ctype.h>
+#define filein "input.txt"
+#define fileout "testo.txt"
+
+int main() {
+    int cont=0,maiuscolo=0,num_caratteri=0;
+    char carattere,carattere_prec=' ';
+    FILE *file_in,*file_out;
+    if ((file_in=fopen(filein, "r"))==NULL || (file_out= fopen(fileout,"w"))==NULL) {
+        printf("Errore nell'apertura dei file, riprovare");
+        return 1;
+    }
+    while(fscanf(file_in,"%c",&carattere)==1) {
+        if (isdigit(carattere)) {
+             carattere='*';
+        }
+        if (carattere_prec=='.' || carattere_prec==',' || carattere_prec==';' || carattere_prec==':'
+         || carattere_prec=='!' || carattere_prec=='?' || carattere_prec=='(') {
+            if (isalpha(carattere) || isdigit(carattere)) {
+                fprintf(file_out," ");
+                cont++;
+            }
+        }
+        if (carattere=='.'  || carattere=='!' || carattere=='?') {
+            maiuscolo = 1;
+        }
+        else if (maiuscolo) {
+            carattere= (char)toupper(carattere);
+            maiuscolo=0;
+        }
+        if (carattere=='\n') {
+            while (cont<25) {
+                fprintf(file_out," ");
+                cont++;
+            }
+        }
+        else
+        {
+            fprintf(file_out,"%c",carattere);
+            cont++;
+            num_caratteri++;
+        }
+        carattere_prec=carattere;
+        if (cont==25) {
+            fprintf(file_out," | c:%d\n",num_caratteri);
+            num_caratteri=0;
+            cont=0;
+        }
+
+    }
+    fclose(file_in);
+    fclose(file_out);
+    return 0;
+}
