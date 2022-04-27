@@ -1,0 +1,172 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#define max_righe 1000
+#define max_char 31
+typedef enum {r_date,r_partenza,r_capolinea,r_ritardo,r_ritardo_tot,r_fine} comando_e;
+struct tratta{
+    char codice_tratta[max_char];
+    char partenza[max_char];
+    char destinazione[max_char];
+    char data[max_char];
+    int ritardo;
+};
+comando_e leggiComando();
+void strToLower(char parola[]);
+void menuParola(struct tratta tabella[], int num);
+void output(struct tratta tab[], int indice, int c);
+void cerca_inter_date(struct tratta tab[], int n,char data1[], char data2[]);
+void cerca_fermata(struct tratta tab[], int n,char partenza[]);
+void cerca_capolinea(struct tratta tab[], int n,char capolinea[]);
+void cerca_inter_date_ritardo(struct tratta tab[], int n,char data1[], char data2[]);
+void cerca_codice(struct tratta tab[], int n,char codice[]);
+
+
+int main() {
+    struct tratta corse[max_righe];
+    FILE *file_in;
+    int numero,i;
+    if ((file_in=fopen("../corse.txt","r"))==NULL){
+        printf("Errore nell'apertura del file 'corse.txt'\n");
+        return 1;
+    }
+    fscanf(file_in,"%d",&numero);
+    for (i=0;i<numero;i++){
+        fscanf(file_in,"%s%s%s%s%*s%*s%d",corse[i].codice_tratta,corse[i].partenza,corse[i].destinazione,corse[i].data,&corse[i].ritardo);
+    }
+    fclose(file_in);
+    menuParola(corse,numero);
+    return 0;
+}
+
+void strToLower(char parola[]){
+    int i;
+    for (i=0; i< strlen(parola);i++){
+        if (isalpha(parola[i])){
+            parola[i]= tolower(parola[i]);
+        }
+    }
+}
+
+comando_e leggiComando(){
+    comando_e c;
+    char comando[max_char];
+    char tabella[6][12]={
+            "date","partenza","capolinea","ritardo","ritardo_tot","fine"
+    };
+    printf("\nInserisci: -'date' per elencare tutte le corse partite in un certo intervallo di date\n"
+           "           -'partenza' per elencare tutte le corse partite da una certa fermata\n"
+           "           -'capolinea' per elencare tutte le corse aventi una data destinazione\n"
+           "           -'ritardo' per elencare tutte le corse che hanno raggiunto la destinazione in ritardo\n"
+           "           -'ritardo_tot' per elencare il ritardo complessivo accumulato dalle corse identificate da un certo codice\n"
+           "           -'fine' per terminare l'inserimento:");
+    scanf("%s",comando);
+    c=r_date;
+    while(c<6 && strcmp(comando,tabella[c])!=0){
+        c++;
+    }
+    return c;
+}
+
+void menuParola(struct tratta tabella[], int num){
+    comando_e comando;
+    char parametro1[max_char],parametro2[max_char];
+    int continua=1;
+    while(continua){
+        comando=leggiComando();
+        switch (comando) {
+            case r_date:
+                printf("Inserisci le date degli estremi dell'intervallo (formato A/G/M):");
+                scanf("%s%s",parametro1,parametro2);
+                cerca_inter_date(tabella,num,parametro1,parametro2);
+                break;
+            case r_partenza:
+                printf("Inserisci la fermata di partenza da cercare:");
+                scanf("%s",parametro1);
+                cerca_fermata(tabella,num,parametro1);
+                break;
+            case r_capolinea:
+                printf("Inserisci il capolinea da cercare:");
+                scanf("%s",parametro1);
+                cerca_capolinea(tabella,num,parametro1);
+                break;
+            case r_ritardo:
+                printf("Inserisci le date degli estremi dell'intervallo (formato A/G/M):");
+                scanf("%s%s",parametro1,parametro2);
+                cerca_inter_date_ritardo(tabella,num,parametro1,parametro2);
+                break;
+            case r_ritardo_tot:
+                printf("Inserisci il codice di tratta da cercare:");
+                scanf("%s",parametro1);
+                cerca_codice(tabella,num,parametro1);
+                break;
+            case r_fine:
+                continua=0;
+                break;
+            default:
+                printf("Inserimento errato, prego riprovare\n");
+        }
+    }
+}
+
+void output(struct tratta tab[], int indice, int c){
+    printf("%d) Codice:%s Partenza:%s Capolinea:%s Data:%s Ritardo:%d\n",c,tab[indice].codice_tratta,tab[indice].partenza,tab[indice].destinazione,tab[indice].data,tab[indice].ritardo);
+}
+
+void cerca_inter_date(struct tratta tab[], int n,char data1[], char data2[]){
+    int i,cont=1;
+    printf("\nLe corse partite nell'intervallo %s-%s sono:\n",data1,data2);
+    for(i=0;i<n;i++){
+        if (strcmp(tab[i].data,data1)>=0 && strcmp(tab[i].data,data2)<=0){
+            output(tab,i,cont);
+            cont++;
+        }
+    }
+}
+
+void cerca_fermata(struct tratta tab[], int n,char partenza[]){
+    int i,cont=1;
+    strToLower(partenza);
+    printf("\nLe corse aventi come partenza %s sono:\n",partenza);
+    for(i=0;i<n;i++){
+        if (strcmp(tab[i].partenza,partenza)==0){
+            output(tab,i,cont);
+            cont++;
+        }
+    }
+}
+
+void cerca_capolinea(struct tratta tab[], int n,char capolinea[]){
+    int i,cont=1;
+    strToLower(capolinea);
+    printf("\nLe corse aventi come capolinea %s sono:\n",capolinea);
+    for(i=0;i<n;i++){
+        if (strcmp(tab[i].destinazione,capolinea)==0){
+            output(tab,i,cont);
+            cont++;
+        }
+    }
+}
+
+void cerca_inter_date_ritardo(struct tratta tab[], int n,char data1[], char data2[]){
+    int i,cont=1;
+    printf("\nLe corse in ritardo nell'intervallo %s-%s sono:\n",data1,data2);
+    for(i=0;i<n;i++){
+        if (strcmp(tab[i].data,data1)>=0 && strcmp(tab[i].data,data2)<=0){
+            if (tab[i].ritardo>0) {
+                output(tab, i, cont);
+                cont++;
+            }
+        }
+    }
+}
+
+void cerca_codice(struct tratta tab[], int n,char codice[]){
+    int i,ritardo=0;
+    for(i=0;i<n;i++){
+        if (strcmp(tab[i].codice_tratta,codice)==0){
+            ritardo=ritardo+tab[i].ritardo;
+        }
+    }
+    printf("Il ritardo accumulato dalle corse aventi %s codice di tratta e' %d",codice,ritardo);
+}
